@@ -14,4 +14,7 @@
         </where>
         ORDER BY sort ASC
     </select>
+    <delete id="deleteById" parameterType="Long">
+        DELETE FROM category WHERE id = #{id}
+    </delete>
 </mapper>
