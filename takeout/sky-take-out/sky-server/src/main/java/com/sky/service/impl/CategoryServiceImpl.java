@@ -1,8 +1,11 @@
 package com.sky.service.impl;
 
+import com.fasterxml.jackson.databind.ser.Serializers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
+import com.sky.context.BaseContext;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -35,8 +39,21 @@ public class CategoryServiceImpl implements CategoryService {
     public void save(CategoryDTO categoryDTO){
         Category category = new Category();
 
+        // 对象拷贝
         BeanUtils.copyProperties(categoryDTO,category);
 
+        // 新增分类时，默认是禁用状态
+        category.setStatus(StatusConstant.DISABLE);
+
+        // 设置创建时间和更新时间
+        category.setCreateTime(LocalDateTime.now());
+        category.setUpdateTime(LocalDateTime.now());
+
+        // 设置创建人和修改人
+        category.setCreateUser(BaseContext.getCurrentId());
+        category.setUpdateUser(BaseContext.getCurrentId());
+
+        // 保存分类
         categoryMapper.insert(category);
     }
 
@@ -74,4 +91,19 @@ public class CategoryServiceImpl implements CategoryService {
         // 删除分类
         categoryMapper.deleteById(id);
     }
+
+    public void  update(CategoryDTO categoryDTO) {
+        Category category = new Category();
+
+        //对象拷贝
+        BeanUtils.copyProperties(categoryDTO, category);
+
+        //设置修改时间和修改人
+        category.setUpdateTime(LocalDateTime.now());
+        category.setUpdateUser(BaseContext.getCurrentId());
+
+        //更新分类
+        categoryMapper.update(category);
+    }
+
 }

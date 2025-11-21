@@ -17,4 +17,25 @@
     <delete id="deleteById" parameterType="Long">
         DELETE FROM category WHERE id = #{id}
     </delete>
+    <update id="update" parameterType="com.sky.entity.Category">
+        update category
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="updateUser != null">
+                update_user = #{updateUser},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
 </mapper>
