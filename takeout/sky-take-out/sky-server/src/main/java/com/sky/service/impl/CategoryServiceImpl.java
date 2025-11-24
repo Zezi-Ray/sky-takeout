@@ -115,4 +115,8 @@ public class CategoryServiceImpl implements CategoryService {
         categoryMapper.update(category);
     }
 
+    public List<Category> list(Integer type) {
+        return categoryMapper.list(type);
+    }
+
 }

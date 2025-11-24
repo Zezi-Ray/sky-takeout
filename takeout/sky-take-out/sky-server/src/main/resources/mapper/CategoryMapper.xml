@@ -14,6 +14,14 @@
         </where>
         ORDER BY sort ASC
     </select>
+    <select id="list" resultType="com.sky.entity.Category">
+        SELECT * FROM category
+        where status = 1
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+        ORDER BY sort ASC, update_time DESC
+    </select>
     <delete id="deleteById" parameterType="Long">
         DELETE FROM category WHERE id = #{id}
     </delete>

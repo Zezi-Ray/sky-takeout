@@ -2,7 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
-import com.sky.properties.JwtProperties;
+import com.sky.entity.Category;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -91,6 +92,19 @@ public class CategoryController {
         log.info("启用或禁用分类: {}, {}", status, id);
         categoryService.startOrStop(status, id);
         return Result.success();
+    }
+
+    /**
+     * 根据类型查询分类列表
+     * @param type
+     * @return
+     */
+    @GetMapping("/list")
+    @ApiOperation(value = "根据类型查询分类列表接口")
+    public Result<List<Category>> list(Integer type) {
+        log.info("查询分类列表: {}", type);
+        List<Category> categoryList = categoryService.list(type);
+        return Result.success(categoryList);
     }
 
 }
