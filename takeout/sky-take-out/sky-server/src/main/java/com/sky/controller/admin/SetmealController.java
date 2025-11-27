@@ -5,6 +5,7 @@ import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.SetmealService;
+import com.sky.vo.SetmealVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,46 @@ public class SetmealController {
     public Result delete(@RequestParam List<Long> ids) {
         log.info("删除套餐: {}", ids);
         setmealService.deleteBatch(ids);
+        return Result.success();
+    }
+
+    /**
+     * 根据id查询套餐信息
+     * @param id 套餐id
+     * @return 套餐信息
+     */
+    @GetMapping("/{id}")
+    @ApiOperation("根据id查询套餐接口")
+    public Result<SetmealVO> getById(@PathVariable Long id) {
+        log.info("根据id查询套餐信息: {}", id);
+        SetmealVO setmealVO = setmealService.getByIdWithDish(id);
+        return Result.success(setmealVO);
+    }
+
+    /**
+     * 修改套餐
+     * @param setmealDTO 套餐信息
+     * @return 处理结果
+     */
+    @PutMapping
+    @ApiOperation("修改套餐接口")
+    public Result update(@RequestBody SetmealDTO setmealDTO) {
+        log.info("更新套餐: {}", setmealDTO);
+        setmealService.updateWithDish(setmealDTO);
+        return Result.success();
+    }
+
+    /**
+     * 起售/停售套餐
+     * @param status 状态
+     * @param id 套餐id
+     * @return 处理结果
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("起售/停售套餐接口")
+    public Result startOrStop(@PathVariable Integer status, Long id) {
+        log.info("起售/停售套餐: {}, {}", status, id);
+        setmealService.startOrStop(status, id);
         return Result.success();
     }
 

@@ -3,11 +3,14 @@ package com.sky.mapper;
 import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
 import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
 import com.sky.vo.SetmealVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 @Mapper
 public interface SetmealMapper {
@@ -46,4 +49,19 @@ public interface SetmealMapper {
      * @param setmealId 套餐id
      */
     void deleteById(Long setmealId);
+
+    /**
+     * 更新套餐信息
+     * @param setmeal 套餐信息
+     */
+    @AutoFill(value = OperationType.UPDATE)
+    void update(Setmeal setmeal);
+
+    /**
+     * 根据套餐id查询对应的菜品信息
+     * @param id 套餐id
+     * @return 菜品信息
+     */
+    @Select("SELECT d.* FROM dish d JOIN setmeal_dish sd ON d.id = sd.dish_id WHERE sd.setmeal_id = #{id}")
+    List<Dish> getBySetmealId(Long id);
 }

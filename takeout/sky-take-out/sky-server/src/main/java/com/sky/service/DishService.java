@@ -49,4 +49,10 @@ public interface DishService {
      */
     List<Dish> getBySetmealId(Long categoryId);
 
+    /**
+     * 启用或停售菜品
+     * @param status 状态
+     * @param id 菜品id
+     */
+    void startOrStop(Integer status, Long id);
 }

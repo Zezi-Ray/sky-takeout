@@ -8,7 +8,9 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
+import com.sky.exception.DishDisableFailedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
@@ -159,6 +161,23 @@ public class DishSefviceImpl implements DishService {
     public List getBySetmealId(Long categoryId) {
         Dish dish = Dish.builder().categoryId(categoryId).status(StatusConstant.ENABLE).build();
         return dishMapper.selectList(dish);
+    }
+
+    public void startOrStop(Integer status, Long id) {
+        // 停售时判断菜品是否关联了套餐
+        if (StatusConstant.DISABLE == status) {
+            List<Setmeal> setmeals = setmealDishMapper.getSetmealByDishIds(id);
+            if (setmeals != null && setmeals.size() > 0) {
+                setmeals.forEach(setmeal -> {
+                    if (StatusConstant.ENABLE == setmeal.getStatus()) {
+                        throw new DishDisableFailedException(MessageConstant.DISH_SETMEAL_ON_SALE_DISABLE_FAIL);
+                    }
+                });
+            }
+        }
+        // 修改菜品状态
+        Dish dish = Dish.builder().id(id).status(status).build();
+        dishMapper.update(dish);
     }
 
 }

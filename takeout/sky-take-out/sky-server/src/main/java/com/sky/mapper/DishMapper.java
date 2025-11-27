@@ -70,5 +70,5 @@ public interface DishMapper {
      * @param dish 菜品条件
      * @return 菜品列表
      */
-    List selectList(Dish dish);
+    List<Dish> selectList(Dish dish);
 }

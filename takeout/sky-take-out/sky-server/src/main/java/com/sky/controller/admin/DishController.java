@@ -104,4 +104,18 @@ public class DishController {
         return Result.success(dishList);
     }
 
+    /**
+     * 起售/停售菜品
+     * @param status 状态
+     * @param id 菜品id
+     * @return 处理结果
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("起售/停售菜品接口")
+    public Result startOrStop(@PathVariable Integer status, Long id) {
+        log.info("起售/停售菜品: {}, {}", status, id);
+        dishService.startOrStop(status, id);
+        return Result.success();
+    }
+
 }
