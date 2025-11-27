@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sky.mapper.SetmealMapper">
+    <insert id="insert" parameterType="Setmeal" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO setmeal
+        (category_id, name, price, status, description, image, create_time, update_time, create_user, update_user)
+        VALUES
+        (#{categoryId}, #{name}, #{price}, #{status}, #{description}, #{image}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})
+    </insert>
+    <delete id="deleteById">
+        DELETE FROM setmeal
+        WHERE id = #{id}
+    </delete>
+    <select id="pageQuery" resultType="com.sky.vo.SetmealVO">
+        SELECT s.* , c.name AS categoryName FROM setmeal AS s left join category AS c ON s.category_id = c.id
+        <where>
+            <if test="name != null">
+                AND s.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND s.status = #{status}
+            </if>
+            <if test="categoryId != null">
+                AND s.category_id = #{categoryId}
+            </if>
+        </where>
+        ORDER BY s.create_time DESC
+    </select>
+</mapper>
