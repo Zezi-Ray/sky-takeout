@@ -22,6 +22,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -130,6 +132,11 @@ public class DishServiceImpl implements DishService {
         return dishVO;
     }
 
+    /**
+     * 修改菜品，同时更新对应的口味数据
+     * @param dishDTO 菜品信息
+     */
+    @Transactional
     public void updateWithFlavor(DishDTO dishDTO) {
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
@@ -163,6 +170,11 @@ public class DishServiceImpl implements DishService {
         return dishMapper.selectList(dish);
     }
 
+    /**
+     * 启用或停售菜品
+     * @param status 状态
+     * @param id 菜品id
+     */
     public void startOrStop(Integer status, Long id) {
         // 停售时判断菜品是否关联了套餐
         if (StatusConstant.DISABLE == status) {
@@ -178,6 +190,28 @@ public class DishServiceImpl implements DishService {
         // 修改菜品状态
         Dish dish = Dish.builder().id(id).status(status).build();
         dishMapper.update(dish);
+    }
+
+    /**
+     * 根据条件查询菜品及其口味信息
+     * @param dish 菜品信息
+     * @return 菜品及其口味信息
+     */
+    public List<DishVO> listWithFlavor(Dish dish) {
+        // 根据条件查询菜品
+        List<Dish> dishes = dishMapper.selectList(dish);
+        // 封装菜品及其口味信息
+        List<DishVO> dishVOs = new ArrayList<>();
+        // 遍历菜品集合
+        for (Dish d : dishes) {
+            DishVO dishVO = new DishVO();
+            BeanUtils.copyProperties(d, dishVO);
+            // 根据菜品ID查询对应的口味数据
+            List<DishFlavor> dishFlavors = dishFlavorMapper.getByDishId(d.getId());
+            dishVO.setFlavors(dishFlavors);
+            dishVOs.add(dishVO);
+        }
+        return dishVOs;
     }
 
 }
