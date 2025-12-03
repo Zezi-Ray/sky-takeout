@@ -54,4 +54,17 @@ public class ShoppingCartController {
         return Result.success();
     }
 
+    /**
+     * 减少购物车中一个物品
+     * @param shoppingCartDTO 购物车信息
+     * @return 处理结果
+     */
+    @PostMapping("/sub")
+    @ApiOperation(value = "减少购物车中一个物品接口")
+    public Result subtract(@RequestBody ShoppingCartDTO shoppingCartDTO) {
+        log.info("减少购物车中一个物品: {}", shoppingCartDTO);
+        shoppingCartService.subtractShoppingCart(shoppingCartDTO);
+        return Result.success();
+    }
+
 }
