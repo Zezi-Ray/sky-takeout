@@ -8,10 +8,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -43,6 +40,18 @@ public class ShoppingCartController {
         log.info("查看购物车");
         List<ShoppingCart> shoppingCartList = shoppingCartService.listShoppingCarts();
         return Result.success(shoppingCartList);
+    }
+
+    /**
+     * 清空购物车
+     * @return 处理结果
+     */
+    @DeleteMapping("/clean")
+    @ApiOperation(value = "清空购物车接口")
+    public Result clear() {
+        log.info("清空购物车");
+        shoppingCartService.clearShoppingCarts();
+        return Result.success();
     }
 
 }
