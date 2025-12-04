@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -225,6 +226,92 @@ public class OrderServiceImpl implements OrderService {
         orderVO.setOrderDetailList(orderDetailList);
 
         return orderVO;
+    }
+
+    /**
+     * 取消订单
+     * @param id
+     */
+    public void cancelOrder(Long id) throws Exception {
+        // Verification
+
+        // 根据订单ID查询订单
+        Orders ordersDB = orderMapper.getById(id);
+
+        // 校验订单是否存在 [存在性]
+        if (ordersDB == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        // 校验订单状态是否可以取消 [状态合法性]
+        // 订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
+        if (ordersDB.getStatus() > Orders.TO_BE_CONFIRMED) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        // Prepare update
+
+        // new Orders对象，绑定id，用于MyBatis更新
+        Orders orders = new Orders();
+        orders.setId(ordersDB.getId());
+
+        // Check status
+
+        // 若订单状态为待接单，需退款 [判断订单状态]
+        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            // 调用微信退款接口
+            // weChatPayUtil.refund(
+                    // 商户订单号
+            //        ordersDB.getNumber(),
+                    //商户退款单号
+            //        ordersDB.getNumber(),
+                    //退款金额
+            //        new BigDecimal(0.01),
+                    //原订单金额
+            //        new BigDecimal(0.01));
+
+            // 设置支付状态为已退款
+            orders.setPayStatus(Orders.REFUND);
+        }
+
+        // Perform update
+
+        // 更新订单状态
+        orders.setStatus(Orders.CANCELLED);
+        // 设置取消原因
+        orders.setCancelReason("用户取消");
+        // 设置取消时间
+        orders.setCancelTime(LocalDateTime.now());
+        // 执行更新
+        orderMapper.update(orders);
+
+    }
+
+    /**
+     * 再来一单
+     * @param id
+     */
+    public void repetition(Long id) {
+        // 获取当前用户ID
+        Long userId = BaseContext.getCurrentId();
+
+        // 根据订单ID查询订单明细
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+
+        // 将订单明细数据转换为购物车数据
+        List<ShoppingCart> shoppingCartList = orderDetailList.stream().map(x -> {
+            ShoppingCart shoppingCart = new ShoppingCart();
+
+            // 将订单详情转换为购物车对象
+            BeanUtils.copyProperties(x, shoppingCart, "id");
+            shoppingCart.setUserId(userId);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+
+            return shoppingCart;
+        }).collect(Collectors.toList());
+
+        // 批量插入购物车数据
+        shoppingCartMapper.insertBatch(shoppingCartList);
     }
 
 }

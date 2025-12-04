@@ -22,6 +22,8 @@ public class OrderController {
 
     @Autowired
     private OrderService OrderService;
+    @Autowired
+    private OrderService orderService;
 
     /**
      * 提交订单
@@ -82,6 +84,22 @@ public class OrderController {
         log.info("用户查询订单详情: {}", id);
         OrderVO orderVO = OrderService.getOrderDetail(id);
         return Result.success(orderVO);
+    }
+
+    @PutMapping("/cancel/{id}")
+    @ApiOperation(value = "取消订单")
+    public Result cancelOrder(@PathVariable Long id) throws Exception {
+        log.info("用户取消订单: {}", id);
+        orderService.cancelOrder(id);
+        return Result.success();
+    }
+
+    @PostMapping("/repetition/{id}")
+    @ApiOperation(value = "再来一单")
+    public Result repetition(@PathVariable Long id) throws Exception {
+        log.info("用户再来一单: {}", id);
+        orderService.repetition(id);
+        return Result.success();
     }
 
 }
