@@ -48,10 +48,10 @@
         SELECT * FROM orders
         <where>
             <if test="number != null and number != ''">
-                AND number = ('%', #{number}, '%')
+                AND number LIKE CONCAT ('%', #{number}, '%')
             </if>
             <if test="phone != null and phone != ''">
-                AND phone = ('%', #{phone}, '%')
+                AND phone LIKE CONCAT ('%', #{phone}, '%')
             </if>
             <if test="status != null">
                 AND status = #{status}
