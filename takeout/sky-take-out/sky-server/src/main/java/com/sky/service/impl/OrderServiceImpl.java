@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -14,6 +15,7 @@ import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
+import com.sky.utils.HttpClientUtil;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
@@ -21,11 +23,14 @@ import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,13 +49,18 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private UserMapper userMapper;
 
+    @Value("${sky.shop.address}")
+    private String shopAddress;
+    @Value("${sky.baidu.map.ak}")
+    private String baiduMapAk;
+
     /**
      * 提交订单
      * @param orderSubmitDTO
      * @return
      */
     @Transactional
-    public OrderSubmitVO submitOrder (OrdersSubmitDTO orderSubmitDTO){
+    public OrderSubmitVO submitOrder (OrdersSubmitDTO orderSubmitDTO) {
 
         // 处理业务异常（地址簿为空 购物车为空）
 
@@ -59,6 +69,9 @@ public class OrderServiceImpl implements OrderService {
         if (addressBook == null) {
             throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_IS_NULL);
         }
+
+        // 检查是否超出配送范围
+        checkOutOfRange(addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail());
 
         // 查询当前用户的购物车数据
         ShoppingCart shoppingCart = new ShoppingCart();
@@ -536,6 +549,74 @@ public class OrderServiceImpl implements OrderService {
         orders.setDeliveryTime(LocalDateTime.now());
 
         orderMapper.update(orders);
+    }
+
+    // 检查地址是否超出配送范围
+    private void checkOutOfRange(String address) {
+        // 构建Map请求参数 商家地址
+        Map map = new HashMap();
+        map.put("address", shopAddress);
+        map.put("output", "json");
+        map.put("ak", baiduMapAk);
+
+        // 调用百度地图API，获取地址经纬度信息
+        String shopCoordinate = HttpClientUtil.doGet("https://api.map.baidu.com/geocoding/v3", map);
+
+        // 校验返回结果
+        JSONObject jsonObject = JSONObject.parseObject(shopCoordinate);
+        if (!jsonObject.getString("status").equals("0")) {
+            throw new OrderBusinessException(MessageConstant.SHOP_COORDINATE_ERROR);
+        }
+
+        // 数据解析
+        JSONObject location = jsonObject.getJSONObject("result").getJSONObject("location");
+        String lng = location.getString("lng");
+        String lat = location.getString("lat");
+        // 店铺经纬度坐标
+        String shopLngLat = lat + "," + lng;
+
+        // 构建Map请求参数 用户地址
+        map.put("address", address);
+
+        // 调用百度地图API，获取地址经纬度信息
+        String userCoordinate = HttpClientUtil.doGet("https://api.map.baidu.com/geocoding/v3", map);
+
+        // 校验返回结果
+        JSONObject userJsonObject = JSONObject.parseObject(userCoordinate);
+        if (!userJsonObject.getString("status").equals("0")) {
+            throw new OrderBusinessException(MessageConstant.USER_COORDINATE_ERROR);
+        }
+
+        // 数据解析
+        JSONObject userLocation = userJsonObject.getJSONObject("result").getJSONObject("location");
+        String userLng = userLocation.getString("lng");
+        String userLat = userLocation.getString("lat");
+        // 用户经纬度坐标
+        String userLngLat = userLat + "," + userLng;
+
+        // 构建Map请求参数 距离测量
+        map.put("origin", shopLngLat);
+        map.put("destination", userLngLat);
+        map.put("steps_info", "0");
+
+        // 调用百度地图API，路线规划
+        String distanceResult = HttpClientUtil.doGet("https://api.map.baidu.com/directionlite/v1/driving", map);
+
+        // 校验返回结果
+        JSONObject distanceJsonObject = JSONObject.parseObject(distanceResult);
+        if (!distanceJsonObject.getString("status").equals("0")) {
+            throw new OrderBusinessException(MessageConstant.DISTANCE_CALCULATION_ERROR);
+        }
+
+        // 数据解析
+        JSONObject result = distanceJsonObject.getJSONObject("result");
+        JSONArray jsonArray = (JSONArray) result.get("routes");
+        Integer distance = (Integer) ((JSONObject) jsonArray.get(0)).get("distance");
+
+        // 判断距离是否超出配送范围（5公里）
+        if (distance > 5000) {
+            throw new OrderBusinessException("超出配送范围");
+        }
     }
 
 }

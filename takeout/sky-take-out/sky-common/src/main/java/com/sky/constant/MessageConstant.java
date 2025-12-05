@@ -25,5 +25,8 @@ public class MessageConstant {
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
     public static final String DISH_SETMEAL_ON_SALE_DISABLE_FAIL = "包含菜品的套餐正在起售中，无法停售";
+    public static final String SHOP_COORDINATE_ERROR = "商铺坐标解析失败";
+    public static final String USER_COORDINATE_ERROR = "用户坐标解析失败";
+    public static final String DISTANCE_CALCULATION_ERROR = "距离计算失败";
 
 }
