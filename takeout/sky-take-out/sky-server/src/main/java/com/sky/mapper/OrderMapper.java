@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface OrderMapper {
@@ -62,4 +63,11 @@ public interface OrderMapper {
      */
     @Select("SELECT * FROM orders WHERE status = #{status} AND order_time < #{order_time}")
     List<Orders> getByStatusAndOrderTimeLT(Integer status, LocalDateTime order_time);
+
+    /**
+     * 根据条件统计订单金额总和
+     * @param map 条件参数
+     * @return 订单金额总和
+     */
+    Double sumByMap(Map map);
 }
