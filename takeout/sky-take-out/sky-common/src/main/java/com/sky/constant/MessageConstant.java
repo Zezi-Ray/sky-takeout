@@ -29,4 +29,5 @@ public class MessageConstant {
     public static final String USER_COORDINATE_ERROR = "用户坐标解析失败";
     public static final String DISTANCE_CALCULATION_ERROR = "距离计算失败";
 
+
 }
