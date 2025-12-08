@@ -5,16 +5,18 @@ import com.sky.entity.Orders;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
-import com.sky.vo.OrderReportVO;
-import com.sky.vo.SalesTop10ReportVO;
-import com.sky.vo.TurnoverReportVO;
-import com.sky.vo.UserReportVO;
+import com.sky.service.WorkSpaceService;
+import com.sky.vo.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,6 +34,8 @@ public class ReportServiceImpl implements ReportService {
     private OrderMapper orderMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private WorkSpaceService workSpaceService;
 
     /**
      * 营业统计报表
@@ -227,6 +231,83 @@ public class ReportServiceImpl implements ReportService {
                 .nameList(salesTop10Name)
                 .numberList(salesTop10Number)
                 .build();
+    }
+
+    /**
+     * 导出营业数据报表
+     * @param response
+     */
+    public void exportBusinessData(HttpServletResponse response) {
+        // 查询数据库，获取报表数据
+        LocalDate beginDate = LocalDate.now().minusDays(30);
+        LocalDate endDate = LocalDate.now().minusDays(1);
+
+        LocalDateTime beginDateTime = LocalDateTime.of(beginDate, LocalTime.MIN);
+        LocalDateTime endDateTime = LocalDateTime.of(endDate, LocalTime.MAX);
+
+        BusinessDataVO summaryData = workSpaceService.getBusinessData(beginDateTime, endDateTime);
+
+        // 通过POI将数据写入Excel文件
+        try (InputStream in = this.getClass().getClassLoader()
+                .getResourceAsStream("template/运营数据报表模板.xlsx")) {
+            if (in == null) {
+                throw new IllegalStateException("报表模板文件不存在：template/运营数据报表模板.xlsx");
+            }
+
+            // 基于模板创建新的Excel文件
+            XSSFWorkbook workbook = new XSSFWorkbook(in);
+
+            // 获取表格文件的Sheet页
+            XSSFSheet sheet = workbook.getSheet("Sheet1");
+
+            // 填充数据--时间
+            sheet.getRow(1).getCell(1).setCellValue("时间: " + beginDate + " 至 " + endDate);
+
+            // 填充数据--营业额
+            sheet.getRow(3).getCell(2).setCellValue(summaryData.getTurnover());
+
+            // 填充数据--订单完成率
+            sheet.getRow(3).getCell(4).setCellValue(summaryData.getOrderCompletionRate());
+
+            // 填充数据--新增用户数
+            sheet.getRow(3).getCell(6).setCellValue(summaryData.getNewUsers());
+
+            // 填充数据--有效订单数
+            sheet.getRow(4).getCell(2).setCellValue(summaryData.getValidOrderCount());
+
+            // 填充数据--平均客单价
+            sheet.getRow(4).getCell(4).setCellValue(summaryData.getUnitPrice());
+
+            // 填充明细数据
+            for (int i = 0; i < 30; i++) {
+                LocalDate date = beginDate.plusDays(i);
+
+                // 查询某一天的营业数据
+                BusinessDataVO dailyData = workSpaceService.getBusinessData(
+                        LocalDateTime.of(date, LocalTime.MIN),
+                        LocalDateTime.of(date, LocalTime.MAX));
+
+                // 获得某一行
+                XSSFRow row = sheet.getRow(7 + i);
+                row.getCell(1).setCellValue(date.toString());
+                row.getCell(2).setCellValue(dailyData.getTurnover());
+                row.getCell(3).setCellValue(dailyData.getValidOrderCount());
+                row.getCell(4).setCellValue(dailyData.getOrderCompletionRate());
+                row.getCell(5).setCellValue(dailyData.getUnitPrice());
+                row.getCell(6).setCellValue(dailyData.getNewUsers());
+            }
+
+            // 通过数据流将Excel文件下载到客户端
+            ServletOutputStream out = response.getOutputStream();
+            workbook.write(out);
+
+            // 关闭资源
+            out.close();
+            workbook.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

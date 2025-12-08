@@ -46,33 +46,32 @@ public class WorkSpaceServiceImpl implements WorkSpaceService {
          */
 
         // 封装参数
-        Map map = new HashMap<>();
-        map.put("beginTime", begin);
-        map.put("endTime", end);
+        Map orderMap = new HashMap<>();
+        orderMap.put("beginTime", begin);
+        orderMap.put("endTime", end);
 
         // 调用mapper方法获取总订单数
-        Integer totalOrderCount = orderMapper.countByMap(map);
+        Integer totalOrderCount = orderMapper.countByMap(orderMap);
 
         // 调用mapper方法获取营业额
-        map.put("status", Orders.CONFIRMED);
-        Double turnover = orderMapper.sumByMap(map);
+        orderMap.put("status", Orders.COMPLETED);
+        Double turnover = orderMapper.sumByMap(orderMap);
         turnover = turnover == null ? 0.0 : turnover;
 
         // 调用mapper方法获取有效订单数
-        Integer validOrderCount = orderMapper.countByMap(map);
+        Integer validOrderCount = orderMapper.countByMap(orderMap);
 
         // 计算平均客单价和订单完成率
-        Double unitPrice = 0.0;
-        Double orderCompletionRate = 0.0;
-        if (totalOrderCount != 0 && validOrderCount != 0) {
-            // 计算平均客单价
-            unitPrice = turnover / validOrderCount;
-            // 计算订单完成率
-            orderCompletionRate = validOrderCount.doubleValue() / validOrderCount;
-        }
+        Double unitPrice = validOrderCount != 0 ? turnover / validOrderCount : 0.0;
+        Double orderCompletionRate = totalOrderCount != 0
+                ? validOrderCount.doubleValue() / totalOrderCount.doubleValue()
+                : 0.0;
 
         // 调用mapper方法获取新增用户数
-        Integer newUsers = userMapper.countByMap(map);
+        Map userMap = new HashMap<>();
+        userMap.put("beginTime", begin);
+        userMap.put("endTime", end);
+        Integer newUsers = userMapper.countByMap(userMap);
 
         return BusinessDataVO.builder()
                 .turnover(turnover)
